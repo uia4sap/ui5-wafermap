@@ -1,0 +1,26 @@
+{
+    "ui5.wafermap": {
+        "icon": "sap-icon://chart",
+        "name": "WaferMap for UI5",
+        "description": "WaferMap for UI5",
+        "source": "https://github.com/uia4sap/ui5-wafermap",
+        "documentation": "https://github.com/uia4sap/ui5-wafermap/blob/master/README.md",
+        "demo": "https://github.com/uia4sap/ui5-wafermap/index.html",
+        "license": "Apache 2.0",
+        "version": "1.0.0",
+        "content": {
+            "WaferMap": {
+                "id": "WaferMap",
+                "name": "WaferMap",
+                "type": "control",
+                "description": "Samples of the WaferMap",
+                "samples": [{
+                        "id": "SimpleWaferMap",
+                        "name": "The simplest",
+                        "description": "the simplest bar chart"
+                    }
+                ]
+            }
+        }
+    }
+}
