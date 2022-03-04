@@ -9,7 +9,6 @@ sap.ui.define([
 ) {
     "use strict";
 
-
     /**
      *
      * @param {string} [sId] id for the new control, generated automatically if no id is given
@@ -38,11 +37,17 @@ sap.ui.define([
 
             properties: {
 
-                diameter: { type: "int", group: "layout", defaultValue: 200 },
+                size: { type: "int", group: "layout", defaultValue: 600 },
 
-                margin: { type: "int", group: "layout", defaultValue: 3 },
+                margin: { type: "int", group: "layout", defaultValue: 10 },
 
-                diePalette: { type: "function", group: "layout", defaultValue: undefined }
+                diePalette: { type: "function", group: "map", defaultValue: undefined },
+
+                drag: { type: "boolean", group: "map", defaultValue: false },
+
+                wheel: { type: "boolean", group: "map", defaultValue: false },
+
+                checkBoundary: { type: "boolean", group: "map", defaultValue: false }
 
             },
 
@@ -76,7 +81,9 @@ sap.ui.define([
         onAfterRendering: function() {
             this.__shotmap = uia
                 .shotmap(this.getId())
-                .wafer(this.getDiameter(), this.getMargin());
+                .size(this.getSize(), this.getMargin())
+                .wheel(this.getWheel())
+                .drag(this.getDrag());
             if (this.getDiePalette()) {
                 this.__shotmap.diePalette(this.getDiePalette());
             }
@@ -85,6 +92,38 @@ sap.ui.define([
         addLayer: function(layer) {
             // important: bSuppressInvalidate = true
             this.addAggregation("layers", layer, true);
+        },
+
+        setDrag: function(enabled) {
+            this.setProperty("drag", enabled);
+            if (this.__shotmap) {
+                this.__shotmap.drag(enabled);
+            }
+        },
+
+        setWheel: function(enabled) {
+            this.setProperty("wheel", enabled);
+            if (this.__shotmap) {
+                this.__shotmap.wheel(enabled);
+            }
+        },
+
+        reset: function() {
+            if (this.__shotmap) {
+                this.__shotmap.reset();
+            }
+        },
+
+        zoomIn: function(offsetX, offsetY) {
+            if (this.__shotmap) {
+                this.__shotmap.zoomIn(offsetX, offsetY);
+            }
+        },
+
+        zoomOut: function(offsetX, offsetY) {
+            if (this.__shotmap) {
+                this.__shotmap.zoomOut(offsetX, offsetY);
+            }
         },
 
         showLayer: function(layerName, visible) {
@@ -116,7 +155,7 @@ sap.ui.define([
                     l.getPicker());
             });
             this.__data = data;
-            this.__shotmap.create();
+            this.__shotmap.create(this.getCheckBoundary());
         }
 
     });

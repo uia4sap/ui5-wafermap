@@ -24,7 +24,11 @@
 <script>
         sap.ui.getCore().attachInit(function () {
 
-            var map = new ui5.wafermap.WaferMap();
+            var map = new ui5.wafermap.WaferMap({
+                "drag": true,
+                "wheel": true,
+                "checkBoundary": true
+            });
 
             var button = new sap.m.Button();
             button.attachPress(() => {
