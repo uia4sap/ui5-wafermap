@@ -19,6 +19,8 @@ sap.ui.define([
     WaferMapRenderer.render = function(oRm, oDiagram) {
         oRm.write("<div ");
         oRm.writeControlData(oDiagram);
+        oRm.addStyle("opacity", 0);
+        oRm.writeStyles();
         oRm.write(">");
         oRm.write("</div>");
     };

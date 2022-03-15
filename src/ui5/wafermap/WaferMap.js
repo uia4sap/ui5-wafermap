@@ -69,6 +69,16 @@ sap.ui.define([
                         die: { type: "object" }
                     }
                 },
+                dieHoverIn: {
+                    parameters: {
+                        die: { type: "object" }
+                    }
+                },
+                dieHoverOut: {
+                    parameters: {
+                        die: { type: "object" }
+                    }
+                },
             }
         },
 
@@ -142,6 +152,16 @@ sap.ui.define([
 
             this.__shotmap.attachClick((function(oEvent) {
                 this.fireDieClicked({
+                    "die": oEvent
+                })
+            }).bind(this));
+            this.__shotmap.attachHoverIn((function(oEvent) {
+                this.fireDieHoverIn({
+                    "die": oEvent
+                })
+            }).bind(this));
+            this.__shotmap.attachHoverOut((function(oEvent) {
+                this.fireDieHoverOut({
                     "die": oEvent
                 })
             }).bind(this));
