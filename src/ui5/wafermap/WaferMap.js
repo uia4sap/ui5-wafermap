@@ -41,13 +41,18 @@ sap.ui.define([
 
                 margin: { type: "int", group: "layout", defaultValue: 10 },
 
+                dieRect: { type: "boolean", group: "layout", defaultValue: true },
+
                 diePalette: { type: "function", group: "map", defaultValue: undefined },
 
                 drag: { type: "boolean", group: "map", defaultValue: false },
 
                 wheel: { type: "boolean", group: "map", defaultValue: false },
 
-                checkBoundary: { type: "boolean", group: "map", defaultValue: false }
+                checkBoundary: { type: "boolean", group: "map", defaultValue: false },
+
+                background: { type: "boolean", group: "map", defaultValue: true }
+
 
             },
 
@@ -89,19 +94,40 @@ sap.ui.define([
         onBeforeRendering: function() {},
 
         onAfterRendering: function() {
-            this.__shotmap = uia
-                .shotmap(this.getId())
+            this.__shotmap = uia.shotmap(this.getId())
                 .size(this.getSize(), this.getMargin())
                 .wheel(this.getWheel())
+                .dieRect(this.getDieRect())
                 .drag(this.getDrag());
             if (this.getDiePalette()) {
                 this.__shotmap.diePalette(this.getDiePalette());
             }
         },
 
+        extract: function() {
+            if (!this.__shotmap) {
+                return null;
+            }
+            return this.__shotmap.extract();
+        },
+
+        blocking: function(blur, ignoreBgColor) {
+            if (!this.__shotmap) {
+                return null;
+            }
+            return this.__shotmap.blocking(blur, ignoreBgColor);
+        },
+
         addLayer: function(layer) {
             // important: bSuppressInvalidate = true
             this.addAggregation("layers", layer, true);
+        },
+
+        setDieRect: function(enabled) {
+            this.setProperty("dieRect", enabled);
+            if (this.__shotmap) {
+                this.__shotmap.dieRect(enabled);
+            }
         },
 
         setDrag: function(enabled) {
@@ -115,6 +141,13 @@ sap.ui.define([
             this.setProperty("wheel", enabled);
             if (this.__shotmap) {
                 this.__shotmap.wheel(enabled);
+            }
+        },
+
+        setBackground: function(enabled) {
+            this.setProperty("background", enabled);
+            if (this.__shotmap) {
+                this.__shotmap.circleBackground(enabled);
             }
         },
 
@@ -136,13 +169,35 @@ sap.ui.define([
             }
         },
 
-        showLayer: function(layerName, visible) {
+        showLayer: function(layerName, visible, redraw) {
             if (this.__data) {
                 var layer = this.__data.layer(layerName);
                 if (layer) {
-                    layer.enabled(visible);
+                    layer.enabled(visible, redraw == undefined ? true : redraw);
                 }
             }
+        },
+
+        redraw: function() {
+            if (!this.__shotmap) {
+                return;
+            }
+
+            this.__shotmap
+                .size(this.getSize(), this.getMargin())
+                .wheel(this.getWheel())
+                .dieRect(this.getDieRect())
+                .circleBackground(this.getBackground())
+                .drag(this.getDrag());
+
+            var data = this.__data;
+            this.getLayers().forEach(function(l) {
+                data.layer(
+                    l.getName(),
+                    l.getTester(),
+                    l.getPicker());
+            });
+            this.__shotmap.draw();
         },
 
         refreshMap: function(maxX, maxY, minX, minY, flat, offset, direction, testMode) {
@@ -150,6 +205,15 @@ sap.ui.define([
                 return;
             }
 
+            this.__shotmap
+                .size(this.getSize(), this.getMargin())
+                .wheel(this.getWheel())
+                .dieRect(this.getDieRect())
+                .circleBackground(this.getBackground())
+                .drag(this.getDrag());
+            if (this.getDiePalette()) {
+                this.__shotmap.diePalette(this.getDiePalette());
+            }
             this.__shotmap.attachClick((function(oEvent) {
                 this.fireDieClicked({
                     "die": oEvent

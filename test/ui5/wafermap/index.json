@@ -17,7 +17,17 @@
                 "samples": [{
                         "id": "SimpleWaferMap",
                         "name": "The simplest",
-                        "description": "the simplest bar chart"
+                        "description": "the simplest wafer map"
+                    },
+                    {
+                        "id": "ColorfulWaferMap",
+                        "name": "The map with colors",
+                        "description": "the wafer map with colors"
+                    },
+                    {
+                        "id": "BlockingMap",
+                        "name": "The blocking map",
+                        "description": "the blocking map"
                     }
                 ]
             }

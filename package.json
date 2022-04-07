@@ -27,6 +27,7 @@
         "@openui5/sap.ui.core": "1.58.4",
         "@openui5/sap.ui.layout": "1.58.4",
         "@openui5/themelib_sap_belize": "1.58.4",
+        "opencv.js": "^1.2.1",
         "pixi.js": "^6.2.2"
     },
     "devDependencies": {

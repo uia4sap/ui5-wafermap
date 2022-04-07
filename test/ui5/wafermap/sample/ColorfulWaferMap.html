@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Page - WaferMap</title>
+    <base href="../../../../">
+    <!--[if lte IE 9]><script>
+    (function() {
+        var baseTag = document.getElementsByTagName('base')[0];
+        baseTag.href = baseTag.href;
+    })();
+    </script><![endif]-->
+    
+    <script id="sap-ui-bootstrap"
+		src="resources/sap-ui-core.js"
+		data-sap-ui-async="true"
+		data-sap-ui-libs="sap.m,ui5.wafermap"
+        data-sap-ui-xx-bindingSyntax="complex"
+		data-sap-ui-theme="sap_belize">
+	</script>
+
+<script>
+        sap.ui.getCore().attachInit(function () {
+
+            var legend = new ui5.wafermap.WaferMapLegend({
+                width: 300
+            });
+
+            var map = new ui5.wafermap.WaferMap({
+                "drag": true,
+                "wheel": true,
+                "checkBoundary": false,
+                "background": false,
+                "diePalette":legend.select.bind(legend)
+                
+            });
+
+            var button = new sap.m.Button();
+            button.attachPress(() => {
+                legend.redraw();
+                legend.setLayerCount(7);
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "1",
+                    tester: () => { return Math.random() > 0.2 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "2",
+                    tester: () => { return Math.random() > 0.2 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "3",
+                    tester: () => { return Math.random() > 0.2 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "4",
+                    tester: () => { return Math.random() > 0.2 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "5",
+                    tester: (r, c) => { return r < c ? 0 : Math.random() > 0.2 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "6",
+                    tester: (r, c) => { return r < c ? 0 : Math.random() > 0.4 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "7",
+                    tester: (r, c) => { return r < c ? 0 : Math.random() > 0.6 ? 0 : 1; },
+                    picker: () => { return null; } 
+                }));
+
+                map.refreshMap(
+                    101,
+                    98,
+                    1,
+                    1,
+                    "U",
+                    1,
+                    "LD",
+                    "counting");
+                
+
+            });
+
+            var oBox = new sap.m.VBox({});
+			oBox.addItem(button);
+			oBox.addItem(legend);
+			oBox.addItem(map);
+            oBox.placeAt("content");
+        });
+    </script>
+</head>
+<body id="content" class="sapUiBody">
+</body>
+</html>

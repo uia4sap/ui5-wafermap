@@ -9,7 +9,8 @@ sap.ui.define([
     'jquery.sap.global',
     'sap/ui/core/library',
     "./3rdparty/uia-wafermap/uia-wafermap",
-    "./3rdparty/pixi/browser/pixi"
+    "./3rdparty/pixi/browser/pixi",
+    "./3rdparty/opencv.js/opencv"
 ], function(
     jQuery,
     library
@@ -33,7 +34,8 @@ sap.ui.define([
         types: [],
         interfaces: [],
         controls: [
-            "ui5.wafermap.WaferMap"
+            "ui5.wafermap.WaferMap",
+            "ui5.wafermap.WaferMapLegend"
         ],
         elements: [
             "ui5.wafermap.Layer"

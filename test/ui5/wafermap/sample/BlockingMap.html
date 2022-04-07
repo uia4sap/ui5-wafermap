@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Test Page - WaferMap</title>
+    <base href="../../../../">
+    <!--[if lte IE 9]><script>
+    (function() {
+        var baseTag = document.getElementsByTagName('base')[0];
+        baseTag.href = baseTag.href;
+    })();
+    </script><![endif]-->
+    
+    <script id="sap-ui-bootstrap"
+		src="resources/sap-ui-core.js"
+		data-sap-ui-async="true"
+		data-sap-ui-libs="sap.m,ui5.wafermap"
+        data-sap-ui-xx-bindingSyntax="complex"
+		data-sap-ui-theme="sap_belize">
+	</script>
+
+<script>
+        sap.ui.getCore().attachInit(function () {
+            var map = new ui5.wafermap.WaferMap({
+                "drag": false,
+                "wheel": false,
+                "checkBoundary": true,
+                "background": false,
+                dieRect: false,
+                "diePalette": (value) => value > 0 ? 0xff0000 : 0xffffff
+            });
+
+            var button1 = new sap.m.Button();
+            var button2 = new sap.m.Button();
+            button1.attachPress(() => {
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "1",
+                    tester: (r, c) => {
+                        if (Math.abs(c - r) <= 4) {
+                            return Math.random() > 0.5 ? 0 : 1;
+                        } else {
+                            return 0;
+                        }
+                     },
+                    picker: () => { return null; } 
+                }));
+                map.addLayer(new ui5.wafermap.Layer({
+                    name: "2",
+                    tester: (r, c) => { 
+                        if (c >= 70 && Math.abs(c - r) <= 20) {
+                            return Math.random() > 0.3 ? 0 : 1;
+                        } else {
+                            return 0;
+                        }
+                    },
+                    picker: () => { return null; } 
+                }));
+
+                map.refreshMap(
+                    101,
+                    98,
+                    1,
+                    1,
+                    "U",
+                    1,
+                    "LD",
+                    "counting");
+            });
+
+            button2.attachPress(() => {
+                var abc = document.getElementById("abc");
+                var result = map.blocking(7);
+                result.draw(abc);
+            });
+
+            var canvas = new sap.ui.core.HTML({
+                content: "<canvas id='abc' width='600' height='600'></canvas>"
+            });
+
+            var oBox = new sap.m.VBox({});
+			oBox.addItem(button1);
+			oBox.addItem(button2);
+			oBox.addItem(map);
+			oBox.addItem(canvas);
+
+
+            oBox.placeAt("content");
+        });
+    </script>
+</head>
+<body id="content" class="sapUiBody">
+</body>
+</html>
