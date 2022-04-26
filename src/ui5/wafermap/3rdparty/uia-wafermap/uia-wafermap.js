@@ -6,11 +6,35 @@
 
   /**
    * merge the grade of all layers.
-   * @param {int} drawR The r index of drawing.
-   * @param {int} drawC c index of drawing.
-   * @return {int) 0: pass, -1: unknown, others: fail.
+   * @param {int} drawR The row index of drawing.
+   * @param {int} drawC The column index of drawing.
+   * @return {int) -1: unknown, others: bin code.
    */
-  function waferdata_counting(drawR, drawC) {
+  function waferdata_bincode(drawR, drawC, dx, dy, dw, dh) {
+    // find out die(row,col) at drawing(drawR,drawC)
+    var pos = this.pos(drawR, drawC);
+    var rowOffset = pos.row - this.minRow;
+    var colOffset = pos.col - this.minCol;
+    for (var i = this.layers.length; i > 0; i--) {
+      var _layer = this.layers[i - 1];
+      if (_layer.enabled()) {
+        var code = _layer.result(rowOffset, colOffset, dx, dy, dw, dh);
+        if (code >= 0) {
+          return code;
+        }
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * merge the grade of all layers.
+   * @param {int} drawR The row index of drawing.
+   * @param {int} drawC The column index of drawing.
+   * @return {int) 0: pass, -1: unknown, others: failed count.
+   */
+  function waferdata_counting(drawR, drawC, dx, dy, dw, dh) {
+    // find out die(row,col) at drawing(drawR,drawC)
     var pos = this.pos(drawR, drawC);
     var rowOffset = pos.row - this.minRow;
     var colOffset = pos.col - this.minCol;
@@ -20,7 +44,7 @@
     for (var i = 0; i < this.layers.length; i++) {
       var _layer = this.layers[i];
       if (_layer.enabled()) {
-        var fail = _layer.result(rowOffset, colOffset);
+        var fail = _layer.result(rowOffset, colOffset, dx, dy, dw, dh);
         if (fail >= 0) {
           found = true;
           result += fail;
@@ -70,8 +94,8 @@
      * @param {int} colOffset The column offset of min column. 
      * @returns 0: pass, 1: failed, -1: unknown.
      */
-    result: function(rowOffset, colOffset) {
-      return this.testResultF(rowOffset, colOffset);
+    result: function(rowOffset, colOffset, dx, dy, dw, dh) {
+      return this.testResultF(rowOffset, colOffset, dx, dy, dw, dh);
     },
 
     /**
@@ -80,8 +104,8 @@
      * @param {int} colOffset The column offset of min column. 
      * @returns {any} The information.
      */
-    data: function(rowOffset, colOffset) {
-      return this.dataPicker ? this.dataPicker(rowOffset, colOffset) : null;
+    data: function(rowOffset, colOffset, dx, dy, dw, dh) {
+      return this.dataPicker ? this.dataPicker(rowOffset, colOffset, dx, dy, dw, dh) : null;
     }
 
   };
@@ -94,17 +118,16 @@
    * @returns {uia.Layer} The layer object.
    */
   function waferdata_layer(id, resultTester, dataPicker) {
-    var found = this.layers.find(function(layer) {
-      return layer.id == id;
-    });
-
     if (resultTester === undefined) {
-      return found;
+      return this.layers.find(function(layer) {
+        return layer.id == id;
+      });
     }
 
-    if (found == undefined) {
-      this.layers.push(layer(id, this.shotmap, resultTester, dataPicker));
-    }
+    this.layers = this.layers.filter(function(layer) {
+      return layer.id != id;
+    });
+    this.layers.push(layer(id, this.shotmap, resultTester, dataPicker));
     return this;
   }
 
@@ -117,6 +140,13 @@
     };
   }
 
+  function waferdata_left_down_r(row, col) {
+    return {
+      drawRow: this.minRow + this.rows - row - 1,
+      drawCol: col - this.minCol
+    };
+  }
+
   function waferdata_left_up(drawRow, drawCol) {
     return {
       row: this.minRow + drawRow,
@@ -124,23 +154,31 @@
     };
   }
 
+  function waferdata_left_up_r(row, col) {
+    return {
+      drawRow: row - this.minRow,
+      drawCol: col - this.minCol
+    };
+  }
+
   /**
    * merge the grade of all layers.
-   * @param {int} drawR The r index of drawing.
-   * @param {int} drawC c index of drawing.
+   * @param {int} drawR The row index of drawing grid.
+   * @param {int} drawC The column index of drawing grid.
    * @return {int) 0:pass, 1:failed, 2:good to bad, 3:good to good, -1:unknown.
    */
-  function waferdata_testing(drawR, drawC) {
+  function waferdata_testing(drawR, drawC, dx, dy, dw, dh) {
+    // find out die(row,col) at drawing(drawR,drawC)
     var pos = this.pos(drawR, drawC);
-    var rowOffset = pos.row - this.minRow;
-    var colOffset = pos.col - this.minCol;
+    var rowOffset = pos.row - this.minRow; // from zero
+    var colOffset = pos.col - this.minCol; // from zero
 
     var found = false;
     var pass = false;
     for (var i = 0; i < this.layers.length; i++) {
       var _layer = this.layers[i];
       if (_layer.enabled()) {
-        var code = _layer.result(rowOffset, colOffset);
+        var code = _layer.result(rowOffset, colOffset, dx, dy, dw, dh);
         if (code >= 0) {
           if (pass && code > 0) {
             return 2; // good to bad
@@ -158,6 +196,8 @@
   function waferdata_mode(pickMode) {
     if (pickMode == "counting") {
       this.testing = waferdata_counting;
+    } else if (pickMode == "bincode") {
+      this.testing = waferdata_bincode;
     } else {
       this.testing = waferdata_testing;
     }
@@ -172,11 +212,10 @@
    */
   function waferdata_pick(drawR, drawC) {
     var data = [];
+    // find out die(row,col) at drawing(drawR,drawC)
     var pos = this.pos(drawR, drawC);
     this.layers.forEach(l => {
-      var rowOffset = pos.row - this.minRow;
-      var colOffset = pos.col - this.minCol;
-      data.push(l.data(rowOffset, colOffset));
+      data.push(l.data(pos.row - this.minRow, pos.col - this.minCol));
     });
     return data;
   }
@@ -190,6 +229,13 @@
     };
   }
 
+  function waferdata_right_down_r(row, col) {
+    return {
+      drawRow: this.minRow + this.rows - row - 1,
+      drawCol: this.minCol + this.cols - col - 1
+    };
+  }
+
   function waferdata_right_up(drawRow, drawCol) {
     var x = this.cols - drawCol - 1;
     var y = drawRow;
@@ -197,6 +243,60 @@
       row: this.minRow + y,
       col: this.minCol + x
     };
+  }
+
+  function waferdata_right_up_r(row, col) {
+    return {
+      drawRow: row - this.minRow,
+      drawCol: this.minCol + this.cols - col - 1
+    };
+  }
+
+  function waferdata_scan() {
+    var dies = [];
+    for (var drawR = 0; drawR < this.rows; drawR++) {
+      for (var drawC = 0; drawC < this.cols; drawC++) {
+        var pos = this.pos(drawR, drawC);
+        var rowOffset = pos.row - this.minRow; // from zero
+        var colOffset = pos.col - this.minCol; // from zero
+        var die = {
+          x: pos.col,
+          y: pos.row,
+          pass: false,
+          code: -1,
+          type: null,
+        };
+        for (var i = 0; i < this.layers.length; i++) {
+          var _layer = this.layers[i];
+          if (!_layer.enabled()) {
+            continue;
+          }
+          var code = _layer.result(rowOffset, colOffset);
+          if (code < 0) {
+            continue;
+          }
+
+          die.code = code;
+          if (code == 0) {
+            if (die.pass) {
+              die.type = die.type ? die.type + "Good" : "GoodGood";
+            } else if (die.type != null) {
+              die.type = die.type + "Good";
+            }
+            die.pass = true;
+          } else {
+            if (die.pass) {
+              die.type = "GoodBad";
+            }
+            die.pass = false;
+          }
+        }
+        if (die.code >= 0) {
+          dies.push(die);
+        }
+      }
+    }
+    return dies;
   }
 
   function waferdata(shotmap, maxRow, maxCol, minRow, minCol, origin, pickMode) {
@@ -215,26 +315,34 @@
 
     if (origin == "rightup" || origin == "ru") {
       this.pos = waferdata_right_up;
+      this.posR = waferdata_right_up_r;
     } else if (origin == "rightdown" || origin == "rd") {
       this.pos = waferdata_right_down;
+      this.posR = waferdata_right_down_r;
     } else if (origin == "leftup" || origin == "lu") {
       this.pos = waferdata_left_up;
+      this.posR = waferdata_left_up_r;
     } else {
       this.pos = waferdata_left_down;
+      this.posR = waferdata_left_down_r;
     }
 
     if (pickMode == "counting") {
       this.testing = waferdata_counting;
+    } else if (pickMode == "bincode") {
+      this.testing = waferdata_bincode;
     } else {
       this.testing = waferdata_testing;
     }
+    this.bincode = waferdata_bincode;
   }
 
   WaferData.prototype = {
     constructor: WaferData,
     layer: waferdata_layer,
     mode: waferdata_mode,
-    pick: waferdata_pick
+    pick: waferdata_pick,
+    scan: waferdata_scan
   };
 
   function shotmap_attach_click(fHandler) {
@@ -42576,7 +42684,8 @@
       data: data,
       areas: areas
     };
-    result["draw"] = output.bind(result);
+    result["draw"] = __drawer.bind(result);
+    result["tester"] = __tester.bind(result);
     return result;
   }
 
@@ -42588,7 +42697,17 @@
     return (background != null && background == rgb) || (r == 255 && g == 255 && b == 255) || (r == 0 && g == 0 && b == 0);
   }
 
-  function output(canvas) {
+  function __tester(_row, _col, dx, dy, _dw, _dh) {
+    var row = this.data[Math.min(this.data.length - 1, parseInt(dy))];
+    var aid = row[Math.min(row.length - 1, parseInt(dx))]; 
+    if (aid == 0) {
+      return -1;
+    }
+    var area = this.areas[aid];
+    return area ? area.rank : -1;
+  }
+
+  function __drawer(canvas) {
     if (this.data.length == 0) {
       return;
     }
@@ -42684,9 +42803,11 @@
       });
 
       var div = document.getElementById(this.id());
-      div.setAttribute("style", "width:" + w + "px");
-      div.setAttribute("style", "height:" + w + "px");
-      div.appendChild(this.app.view);
+      if (div) {
+        div.setAttribute("style", "width:" + w + "px");
+        div.setAttribute("style", "height:" + w + "px");
+        div.appendChild(this.app.view);
+      }
 
       // circle
       // circle: wafer
@@ -42845,69 +42966,20 @@
     }
 
     // grid: dies
-    var self = this;
     var dy = dy0;
-    for (var row = 0; row < this.waferdata.rows; row++) {
+    for (var drawRow = 0; drawRow < this.waferdata.rows; drawRow++) {
       var dx = dx0;
-      for (var col = 0; col < this.waferdata.cols; col++) {
+      for (var drawCol = 0; drawCol < this.waferdata.cols; drawCol++) {
         var inCircle = this.checkBounding ? inside(dx, dy, dw, dh, r, r, rm) : true;
 
-        // testResult: diff from 'testing' or 'counting'
-        var testResult = this.waferdata.testing(row, col);
+        // testResult: diff from 'testing', 'counting', 'bincode'
+        var testResult = this.waferdata.testing(drawRow, drawCol, dx, dy, dw, dh);
         if (inCircle && testResult >= 0) {
-          var die = new Graphics();
-          die["info"] = {
-            drawRow: row,
-            drawCol: col,
-            x: dx,
-            y: dy
-          };
-          if (this.dieRectEnabled) {
-            die.lineStyle(1, 0xcccccc, dw / 10);
+          var color = testResult < 0 ? 0xeeeeee : this.diePalette()(testResult) || 0xeeeeee;
+          if (this.highCode != null && this.waferdata.bincode(drawRow, drawCol, dx, dy, dw, dh) == this.highCode) {
+            color = this.highColor;
           }
-          die.beginFill(testResult < 0 ? 0xeeeeee : this.diePalette()(testResult));
-          die.drawRect(dx, dy, dw, dh);
-          die.endFill();
-          die.interactive = true;
-          die.on("mousedown", function(e) {
-            if (self.clickHandler) {
-              var _die = e.target;
-              self.clickHandler({
-                source: _die,
-                data: self.waferdata,
-                point: e.data.global,
-                pick: function() {
-                  return self.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
-                }
-              });
-            }
-          });
-          die.on("mouseover", function(e) {
-            if (self.hoverInHandler) {
-              var _die = e.target;
-              self.hoverInHandler({
-                source: _die,
-                data: self.waferdata,
-                point: e.data.global,
-                pick: function() {
-                  return self.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
-                }
-              });
-            }
-          });
-          die.on("mouseout", function(e) {
-            if (self.hoverOutHandler) {
-              var _die = e.target;
-              self.hoverOutHandler({
-                source: _die,
-                data: self.waferdata,
-                point: e.data.global,
-                pick: function() {
-                  return self.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
-                }
-              });
-            }
-          });
+          var die = createDie(this, drawRow, drawCol, dx, dy, dw, dh, color);
           this.dies.addChild(die);
         }
         dx += dw;
@@ -42917,6 +42989,63 @@
     this.app.stage.addChild(this.dies);
 
     this.app.render();
+  }
+
+  function createDie(map, drawRow, drawCol, dx, dy, dw, dh, color) {
+    var die = new Graphics();
+    die["info"] = {
+      drawRow: drawRow,
+      drawCol: drawCol,
+      x: dx,
+      y: dy
+    };
+    if (map.dieRectEnabled) {
+      die.lineStyle(1, 0xcccccc, dw / 10);
+    }
+    die.beginFill(color);
+    die.drawRect(dx, dy, dw, dh);
+    die.endFill();
+    die.interactive = true;
+    die.on("mousedown", function(e) {
+      if (map.clickHandler) {
+        var _die = e.target;
+        map.clickHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    die.on("mouseover", function(e) {
+      if (map.hoverInHandler) {
+        var _die = e.target;
+        map.hoverInHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    die.on("mouseout", function(e) {
+      if (map.hoverOutHandler) {
+        var _die = e.target;
+        map.hoverOutHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    return die;
   }
 
   function inside(x, y, w, h, cx, cy, r) {
@@ -42936,11 +43065,30 @@
       return null;
     }
 
+    const bg = new PIXI.Graphics();
+    bg.beginFill(0xffffff);
+    bg.drawRect(0, 0, this.diameter, this.diameter);
+    bg.addChild(this.dies);
+
     if (type == "image") {
-      return this.app.renderer.plugins.extract.image(this.dies);
+      return this.app.renderer.plugins.extract.image(bg, "image/png");
+    } else if (type == "base64") {
+      return this.app.renderer.plugins.extract.base64(bg, "image/png");
     } else {
-      return this.app.renderer.plugins.extract.canvas(this.dies);
+      return this.app.renderer.plugins.extract.canvas(bg);
     }
+  }
+
+  function shotmap_highlight(highCode, highColor = 0xffff00) {
+    if (arguments.length > 0) {
+      this.highCode = highCode;
+      this.highColor = highColor;
+      return this;
+    }
+    return {
+      code: this.highCode,
+      color: this.highColor
+    };
   }
 
   function shotmap_move(offsetX, offsetY, event) {
@@ -42984,6 +43132,99 @@
     this.app.render();
 
     return this;
+  }
+
+  function shotmap_scan() {
+    return this.waferdata.scan();
+  }
+
+  function shotmap_select_die(row, col, color = 0xffff00) {
+    if (this.selectedDie) {
+      this.selectedDie.destroy();
+    }
+    if (!this.app || arguments.length == 0) {
+      return;
+    }
+
+    var posR = this.waferdata.posR(row, col);
+
+    var dw = this.dieWidth;
+    var dh = this.dieHeight;
+
+    var dx0 = (this.diameter - dw * this.waferdata.cols) / 2;
+    var dy0 = (this.diameter - dh * this.waferdata.rows) / 2;
+    if (this.notchSide == "left" || this.notchSide == "l") {
+      dx0 += dw * this.notchOffset;
+    } else if (this.notchSide == "right" || this.notchSide == "r") {
+      dx0 -= dw * this.notchOffset;
+    } else if (this.notchSide == "up" || this.notchSide == "u") {
+      dy0 += dh * this.notchOffset;
+    } else {
+      dy0 -= dh * this.notchOffset;
+    }
+    var dx = dx0 + dw * posR.drawCol;
+    var dy = dy0 + dh * posR.drawRow;
+
+    this.selectedDie = createDie$1(this, posR.drawRow, posR.drawCol, dx, dy, dw, dh, color);
+    this.app.stage.addChild(this.selectedDie);
+    this.app.render();
+  }
+
+  function createDie$1(map, row, col, dx, dy, dw, dh, color) {
+    var die = new PIXI.Graphics();
+    die["info"] = {
+      drawRow: row,
+      drawCol: col,
+      x: dx,
+      y: dy
+    };
+    if (map.dieRectEnabled) {
+      die.lineStyle(1, 0xcccccc, dw / 10);
+    }
+    die.beginFill(color);
+    die.drawRect(dx, dy, dw, dh);
+    die.endFill();
+    die.interactive = true;
+    die.on("mousedown", function(e) {
+      if (map.clickHandler) {
+        var _die = e.target;
+        map.clickHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    die.on("mouseover", function(e) {
+      if (map.hoverInHandler) {
+        var _die = e.target;
+        map.hoverInHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    die.on("mouseout", function(e) {
+      if (map.hoverOutHandler) {
+        var _die = e.target;
+        map.hoverOutHandler({
+          source: _die,
+          data: map.waferdata,
+          point: e.data.global,
+          pick: function() {
+            return map.waferdata.pick(_die.info.drawRow, _die.info.drawCol);
+          }
+        });
+      }
+    });
+    return die;
   }
 
   /**
@@ -43114,6 +43355,8 @@
     //
     this.dieRectEnabled = true;
     this.circleBackgroundEnabled = true;
+
+    this.highCode = null;
   }
 
   ShotMap.prototype = (function() {
@@ -43131,9 +43374,12 @@
       extract: shotmap_extract,
       drag: shotmap_drag,
       draw: shotmap_draw,
+      highlight: shotmap_highlight,
       move: shotmap_move,
       notch: shotmap_notch,
       reset: shotmap_reset,
+      scan: shotmap_scan,
+      selectDie: shotmap_select_die,
       size: shotmap_size,
       wafer: shotmap_wafer,
       wheel: shotmap_wheel,
@@ -43190,7 +43436,7 @@
     this.layers = Math.max(1, layers);
     this.colors = [];
     for (var i = 0; i <= this.layers; i++) {
-      this.colors.push(this.ref[Math.round(10 * i / this.layers)]);
+      this.colors.push(this.ref[Math.ceil(10 * i / this.layers)]);
     }
     return this;
   }
@@ -43235,7 +43481,19 @@
     this.width = 600;
     this.height = 20;
     this.layers = 1;
-    this.ref = [0xffffff, 0xd5e5fa, 0x92b0ff, 0x6271fd, 0x009c95, 0x64ff00, 0xc5ff30, 0xf7c50c, 0xf18008, 0xff1800, 0x990000];
+    this.ref = [
+      0xffffff, //  0
+      0xd5e5fa, //  0-10
+      0x92b0ff, // 10-20
+      0x6271fd, // 20-30
+      0x009c95, // 30-40
+      0x64ff00, // 40-50
+      0xc5ff30, // 50-60
+      0xf7c50c, // 60-70
+      0xf18008, // 70-80
+      0xff1800, // 80-90
+      0x990000
+    ];
     this.colors = [0xffffff, 0x990000];
   }
 

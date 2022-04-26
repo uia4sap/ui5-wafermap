@@ -27,27 +27,21 @@
             var map = new ui5.wafermap.WaferMap({
                 "drag": true,
                 "wheel": true,
-                "checkBoundary": true
+                "testMode": "counting",
+                 "checkBoundary": true
             });
-
             var button = new sap.m.Button();
             button.attachPress(() => {
+                map.setDieMaxX(15);
+                map.setDieMaxY(7);
+                map.setDieMinX(1);
+                map.setDieMinY(1);
                 map.addLayer(new ui5.wafermap.Layer({
                     name: "layer1",
                     tester: () => { return 0; },
                     picker: () => { return null; } 
                 }));
-                map.refreshMap(
-                    51,
-                    49,
-                    1,
-                    1,
-                    "U",
-                    1,
-                    "LD",
-                    "counting");
-                
-
+                map.createMap();
             });
 
             var oBox = new sap.m.VBox({});

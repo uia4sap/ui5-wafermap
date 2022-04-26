@@ -28,7 +28,12 @@
                 "wheel": false,
                 "checkBoundary": true,
                 "background": false,
-                dieRect: false,
+                "testMode": "counting",
+                "dieRect": false,
+                "dieMaxX": 101,
+                "dieMaxY": 98,
+                "dieMinX": 1,
+                "dieMinY": 1,
                 "diePalette": (value) => value > 0 ? 0xff0000 : 0xffffff
             });
 
@@ -57,16 +62,7 @@
                     },
                     picker: () => { return null; } 
                 }));
-
-                map.refreshMap(
-                    101,
-                    98,
-                    1,
-                    1,
-                    "U",
-                    1,
-                    "LD",
-                    "counting");
+                map.createMap();
             });
 
             button2.attachPress(() => {

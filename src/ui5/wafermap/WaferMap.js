@@ -43,17 +43,33 @@ sap.ui.define([
 
                 dieRect: { type: "boolean", group: "layout", defaultValue: true },
 
-                diePalette: { type: "function", group: "map", defaultValue: undefined },
+                diePalette: { type: "function", group: "graph", defaultValue: undefined },
 
-                drag: { type: "boolean", group: "map", defaultValue: false },
+                dieMaxX: { type: "int", group: "layout", defaultValue: 100 },
 
-                wheel: { type: "boolean", group: "map", defaultValue: false },
+                dieMaxY: { type: "int", group: "layout", defaultValue: 100 },
 
-                checkBoundary: { type: "boolean", group: "map", defaultValue: false },
+                dieMinX: { type: "int", group: "layout", defaultValue: 1 },
 
-                background: { type: "boolean", group: "map", defaultValue: true }
+                dieMinY: { type: "int", group: "layout", defaultValue: 1 },
 
+                flat: { type: "string", group: "layout", defaultValue: "d" },
 
+                graphOffset: { type: "int", group: "graph", defaultValue: 1 },
+
+                graphCoord: { type: "string", group: "layout", defaultValue: "LD" },
+
+                testMode: { type: "string", group: "layout", defaultValue: "testing" },
+
+                drag: { type: "boolean", group: "graph", defaultValue: false },
+
+                wheel: { type: "boolean", group: "graph", defaultValue: false },
+
+                checkBoundary: { type: "boolean", group: "graph", defaultValue: false },
+
+                background: { type: "boolean", group: "graph", defaultValue: true },
+
+                createNow: { type: "boolean", group: "graph", defaultValue: false }
             },
 
             defaultAggregation: "layers",
@@ -98,17 +114,18 @@ sap.ui.define([
                 .size(this.getSize(), this.getMargin())
                 .wheel(this.getWheel())
                 .dieRect(this.getDieRect())
+                .circleBackground(this.getBackground())
                 .drag(this.getDrag());
             if (this.getDiePalette()) {
                 this.__shotmap.diePalette(this.getDiePalette());
             }
         },
 
-        extract: function() {
+        extract: function(type) {
             if (!this.__shotmap) {
                 return null;
             }
-            return this.__shotmap.extract();
+            return this.__shotmap.extract(type || "base64");
         },
 
         blocking: function(blur, ignoreBgColor) {
@@ -123,38 +140,109 @@ sap.ui.define([
             this.addAggregation("layers", layer, true);
         },
 
+        setSize: function(size) {
+            this.setProperty("size", size, true);
+        },
+
+        setMargin: function(margin) {
+            this.setProperty("margin", margin, true);
+        },
+
         setDieRect: function(enabled) {
-            this.setProperty("dieRect", enabled);
+            this.setProperty("dieRect", enabled, true);
             if (this.__shotmap) {
                 this.__shotmap.dieRect(enabled);
             }
         },
 
+        setDiePalette: function(diePalette) {
+            this.setProperty("diePalette", diePalette, true);
+            if (this.__shotmap) {
+                this.__shotmap.diePalette(diePalette);
+            }
+        },
+
+        setDieMaxX: function(dieMaxX) {
+            this.setProperty("dieMaxX", dieMaxX, true);
+        },
+
+        setDieMaxY: function(dieMaxY) {
+            this.setProperty("dieMaxY", dieMaxY, true);
+        },
+
+        setDieMinX: function(dieMinX) {
+            this.setProperty("dieMinX", dieMinX, true);
+        },
+
+        setDieMinY: function(dieMinY) {
+            this.setProperty("dieMinY", dieMinY, true);
+        },
+
+        setFlat: function(flat) {
+            this.setProperty("flat", flat, true);
+        },
+
+        setGraphOffset: function(graphOffset) {
+            this.setProperty("graphOffset", graphOffset, true);
+        },
+
+        setGraphCoord: function(graphCoord) {
+            this.setProperty("graphCoord", graphCoord, true);
+        },
+
+        setTestMode: function(testMode) {
+            this.setProperty("testMode", testMode, true);
+        },
+
         setDrag: function(enabled) {
-            this.setProperty("drag", enabled);
+            this.setProperty("drag", enabled, true);
             if (this.__shotmap) {
                 this.__shotmap.drag(enabled);
             }
         },
 
         setWheel: function(enabled) {
-            this.setProperty("wheel", enabled);
+            this.setProperty("wheel", enabled, true);
             if (this.__shotmap) {
                 this.__shotmap.wheel(enabled);
             }
         },
 
+        setCheckBoundary: function(checkBoundary) {
+            this.setProperty("checkBoundary", checkBoundary, true);
+        },
+
         setBackground: function(enabled) {
-            this.setProperty("background", enabled);
+            this.setProperty("background", enabled, true);
             if (this.__shotmap) {
                 this.__shotmap.circleBackground(enabled);
             }
+        },
+
+        setCreateNow: function(createNow) {
+            this.setProperty("createNow", createNow, true);
+            if (createNow) {
+                this.createMap();
+            }
+        },
+
+        highlight: function(code, color) {
+            this.__shotmap.highlight(code, color);
+            this.__shotmap.draw();
+        },
+
+        selectDie: function(row, col, color) {
+            this.__shotmap.selectDie(row, col, color);
         },
 
         reset: function() {
             if (this.__shotmap) {
                 this.__shotmap.reset();
             }
+        },
+
+        scan: function() {
+            return this.__shotmap.scan();
         },
 
         zoomIn: function(offsetX, offsetY) {
@@ -182,25 +270,19 @@ sap.ui.define([
             if (!this.__shotmap) {
                 return;
             }
-
             this.__shotmap
                 .size(this.getSize(), this.getMargin())
                 .wheel(this.getWheel())
                 .dieRect(this.getDieRect())
                 .circleBackground(this.getBackground())
                 .drag(this.getDrag());
-
-            var data = this.__data;
-            this.getLayers().forEach(function(l) {
-                data.layer(
-                    l.getName(),
-                    l.getTester(),
-                    l.getPicker());
-            });
             this.__shotmap.draw();
         },
 
-        refreshMap: function(maxX, maxY, minX, minY, flat, offset, direction, testMode) {
+        createMap: function() {
+            if (!this.__shotmap) {
+                this.__shotmap = uia.shotmap(this.getId());
+            }
             if (!this.__shotmap) {
                 return;
             }
@@ -230,8 +312,14 @@ sap.ui.define([
                 })
             }).bind(this));
             var data = this.__shotmap
-                .notch(flat ? flat : "d", offset == undefined ? 1 : offset)
-                .data(maxX, maxY, minX, minY, direction, testMode);
+                .notch(this.getFlat(), this.getGraphOffset())
+                .data(
+                    this.getDieMaxY(), // maxRow
+                    this.getDieMaxX(), // maxCol
+                    this.getDieMinY(), // minRow
+                    this.getDieMinX(), // minCol
+                    this.getGraphCoord(),
+                    this.getTestMode());
             this.getLayers().forEach(function(l) {
                 data.layer(
                     l.getName(),
@@ -241,7 +329,6 @@ sap.ui.define([
             this.__data = data;
             this.__shotmap.create(this.getCheckBoundary());
         }
-
     });
 
     return WaferMap;

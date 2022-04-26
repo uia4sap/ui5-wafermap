@@ -33,7 +33,12 @@
                 "wheel": true,
                 "checkBoundary": false,
                 "background": false,
-                "diePalette":legend.select.bind(legend)
+                "testMode": "counting",
+                "dieMaxX": 101,
+                "dieMaxY": 98,
+                "dieMinX": 1,
+                "dieMinY": 1,
+                 "diePalette":legend.select.bind(legend)
                 
             });
 
@@ -77,17 +82,7 @@
                     picker: () => { return null; } 
                 }));
 
-                map.refreshMap(
-                    101,
-                    98,
-                    1,
-                    1,
-                    "U",
-                    1,
-                    "LD",
-                    "counting");
-                
-
+                map.createMap();
             });
 
             var oBox = new sap.m.VBox({});
