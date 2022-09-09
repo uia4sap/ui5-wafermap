@@ -59,7 +59,7 @@ sap.ui.define([
 
                 graphCoord: { type: "string", group: "layout", defaultValue: "LD" },
 
-                testMode: { type: "string", group: "layout", defaultValue: "testing" },
+                testMode: { type: "any", group: "layout", defaultValue: "testing" },
 
                 drag: { type: "boolean", group: "graph", defaultValue: false },
 

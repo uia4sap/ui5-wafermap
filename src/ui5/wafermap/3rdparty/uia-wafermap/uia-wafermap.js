@@ -329,7 +329,10 @@
       this.posR = waferdata_left_down_r;
     }
 
-    if (pickMode == "counting") {
+    if (typeof pickMode === 'function') {
+      pickMode.bind(this);
+      this.testing = pickMode;
+    } else if (pickMode == "counting") {
       this.testing = waferdata_counting;
     } else if (pickMode == "bincode") {
       this.testing = waferdata_bincode;
@@ -42686,7 +42689,7 @@
       data: data,
       areas: areas
     };
-    result["draw"] = __drawer.bind(result);
+    result["draw"] = __draw.bind(result);
     result["tester"] = __tester.bind(result);
     return result;
   }
@@ -42701,7 +42704,7 @@
 
   function __tester(_row, _col, dx, dy, _dw, _dh) {
     var row = this.data[Math.min(this.data.length - 1, parseInt(dy))];
-    var aid = row[Math.min(row.length - 1, parseInt(dx))]; 
+    var aid = row[Math.min(row.length - 1, parseInt(dx))];
     if (aid == 0) {
       return -1;
     }
@@ -42709,7 +42712,7 @@
     return area ? area.rank : -1;
   }
 
-  function __drawer(canvas) {
+  function __draw(canvas) {
     if (this.data.length == 0) {
       return;
     }
@@ -42891,7 +42894,7 @@
     if (pickMode == undefined || pickMode == null) {
       origin = "testing";
     }
-    this.waferdata = waferdata(this, maxRow, maxCol, minRow, minCol, origin.toLowerCase(), pickMode.toLowerCase());
+    this.waferdata = waferdata(this, maxRow, maxCol, minRow, minCol, origin.toLowerCase(), pickMode);
     var w = 0.94 * (this.diameter - this.margin);
     this.dieWidth = w / this.waferdata.cols;
     this.dieHeight = w / this.waferdata.rows;
