@@ -105,20 +105,17 @@ sap.ui.define([
 
         constructor: function(sId, mSettings) {
             Element.apply(this, arguments);
+            addEventListener("resize", (function() {
+                this.invalidate();
+            }).bind(this));
         },
 
-        onBeforeRendering: function() {},
+        onBeforeRendering: function() {
+            this.__shotmap = null;
+        },
 
         onAfterRendering: function() {
-            this.__shotmap = uia.shotmap(this.getId())
-                .size(this.getSize(), this.getMargin())
-                .wheel(this.getWheel())
-                .dieRect(this.getDieRect())
-                .circleBackground(this.getBackground())
-                .drag(this.getDrag());
-            if (this.getDiePalette()) {
-                this.__shotmap.diePalette(this.getDiePalette());
-            }
+            this.createMap();
         },
 
         extract: function(type) {
@@ -267,6 +264,7 @@ sap.ui.define([
         },
 
         redraw: function() {
+            this.invalidate();
             if (!this.__shotmap) {
                 return;
             }

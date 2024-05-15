@@ -20,6 +20,11 @@
                         "description": "the simplest wafer map"
                     },
                     {
+                        "id": "MultiLayerMap",
+                        "name": "The multi-layer",
+                        "description": "the The multi-layer map"
+                    },
+                    {
                         "id": "ColorfulWaferMap",
                         "name": "The map with colors",
                         "description": "the wafer map with colors"

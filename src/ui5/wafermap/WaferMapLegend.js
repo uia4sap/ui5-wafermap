@@ -35,11 +35,15 @@ sap.ui.define([
 
             properties: {
 
+                pattern: { type: "int", group: "layout", defaultValue: 0 },
+
                 width: { type: "int", group: "layout", defaultValue: 600 },
 
                 height: { type: "int", group: "layout", defaultValue: 20 },
 
-                layerCount: { type: "int", group: "data", defaultValue: 1 }
+                minValue: { type: "int", group: "data", defaultValue: 0 },
+
+                maxValue: { type: "int", group: "data", defaultValue: 10 }
             }
         },
 
@@ -47,20 +51,30 @@ sap.ui.define([
             Element.apply(this, arguments);
         },
 
-        onBeforeRendering: function() {},
+        onBeforeRendering: function() {
+            this.__legend = null;
+        },
 
         onAfterRendering: function() {
-            this.__legend = uia.maplegend(this.getId())
+            this.__legend = uia.maplegend(this.getId(), this.getPattern())
                 .size(this.getWidth(), this.getHeight())
                 .draw();
         },
 
-        setLayerCount: function(layerCount) {
+        setMinValue: function(minValue) {
             if (!this.__legend) {
                 return;
             }
-            this.__legend.layerCount(layerCount);
-            this.setProperty("layerCount", layerCount);
+            this.__legend.range(minValue, this.getMaxValue());
+            this.setProperty("minValue", minValue);
+        },
+
+        setMaxValue: function(maxValue) {
+            if (!this.__legend) {
+                return;
+            }
+            this.__legend.range(this.getMinValue(), maxValue);
+            this.setProperty("maxValue", maxValue);
         },
 
         instance: function() {
@@ -76,11 +90,11 @@ sap.ui.define([
                 .draw();
         },
 
-        select: function(count) {
+        select: function(value) {
             if (!this.__legend) {
                 return 0xffffff;
             }
-            return this.__legend.select(count);
+            return this.__legend.select(value);
         }
 
     });
