@@ -258,6 +258,11 @@ sap.ui.define([
             if (this.__data) {
                 var layer = this.__data.layer(layerName);
                 if (layer) {
+                    this.getLayers().forEach(function(l) {
+                        if (l.getName() == layerName) {
+                            l.setEnabled(visible);
+                        }
+                    });
                     layer.enabled(visible, redraw == undefined ? true : redraw);
                 }
             }
@@ -322,7 +327,8 @@ sap.ui.define([
                 data.layer(
                     l.getName(),
                     l.getTester(),
-                    l.getPicker());
+                    l.getPicker(),
+                    l.getEnabled());
             });
             this.__data = data;
             this.__shotmap.create(this.getCheckBoundary());

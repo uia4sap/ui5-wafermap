@@ -15,6 +15,8 @@ sap.ui.define([
 
                 name: { type: "string", group: "data" },
 
+                enabled: { type: "boolean", group: "data", defaultValue: true },
+
                 tester: { type: "function", group: "data" },
 
                 picker: { type: "function", group: "data" }

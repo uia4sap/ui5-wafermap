@@ -1,0 +1,130 @@
+<!DOCTYPE HTML>
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Test Page - WaferMap</title>
+        <base href="../../../../">
+        <!--[if lte IE 9]><script>
+    (function() {
+        var baseTag = document.getElementsByTagName('base')[0];
+        baseTag.href = baseTag.href;
+    })();
+    </script><![endif]-->
+
+        <script id="sap-ui-bootstrap" src="resources/sap-ui-core.js" data-sap-ui-async="true" data-sap-ui-libs="sap.m,ui5.wafermap" data-sap-ui-xx-bindingSyntax="complex" data-sap-ui-theme="sap_belize">
+        </script>
+
+        <script>
+            sap.ui.getCore().attachInit(function() {
+                var legend = new ui5.wafermap.WaferMapLegend({
+                    pattern: 1,
+                    minValue: 1,
+                    maxValue: 4,
+                    width: 300
+                });
+
+                var map = new ui5.wafermap.WaferMap({
+                    "testMode": "counting",
+                    "drag": true,
+                    "checkBoundary": true,
+                    "diePalette": function(a, b) {
+                        switch (a) {
+                            case 0:
+                                return 0xffff00;
+                            case 1:
+                                return 0xff0000;
+                            case 2:
+                                return 0xff00ff;
+                            case 3:
+                                return 0x0000ff;
+                            default:
+                                return 0xffffff;
+                        }
+                    }
+                });
+
+                var button = new sap.m.Button({
+                    text: "Refresh"
+                });
+                button.attachPress(() => {
+                    map.setDieMaxX(15);
+                    map.setDieMaxY(7);
+                    map.setDieMinX(1);
+                    map.setDieMinY(1);
+                    map.addLayer(new ui5.wafermap.Layer({
+                        name: "layer1",
+                        tester: (x, y) => { return x == 1 ? 1 : -1; },
+                        picker: () => { return null; }
+                    }));
+                    map.addLayer(new ui5.wafermap.Layer({
+                        name: "layer2",
+                        tester: (x, y) => { return x <= 2 ? 1 : -1; },
+                        picker: () => { return null; }
+                    }));
+                    map.addLayer(new ui5.wafermap.Layer({
+                        name: "layer3",
+                        tester: (x, y) => { return x == 3 ? 1 : -1; },
+                        picker: () => { return null; }
+                    }));
+                    map.addLayer(new ui5.wafermap.Layer({
+                        name: "layer4",
+                        tester: (x, y) => { return x != 4 ? 0 : -1; },
+                        picker: () => { return null; }
+                    }));
+
+                    map.createMap();
+                });
+
+                var chk1 = new sap.m.CheckBox({
+                    text: "Layer1",
+                    selected: true
+                });
+                chk1.attachSelect(function(oEvent) {
+                    map.showLayer("layer1", oEvent.getSource().getSelected(), true);
+                });
+                var chk2 = new sap.m.CheckBox({
+                    text: "Layer2",
+                    selected: true
+                });
+                chk2.attachSelect(function(oEvent) {
+                    map.showLayer("layer2", oEvent.getSource().getSelected(), false);
+                    map.redraw();
+                });
+                var chk3 = new sap.m.CheckBox({
+                    text: "Layer3",
+                    selected: true
+                });
+                chk3.attachSelect(function(oEvent) {
+                    map.showLayer("layer3", oEvent.getSource().getSelected(), true);
+                });
+                var chk4 = new sap.m.CheckBox({
+                    text: "Layer4",
+                    selected: true
+                });
+                chk4.attachSelect(function(oEvent) {
+                    map.showLayer("layer4", oEvent.getSource().getSelected(), true);
+                });
+
+                var hBox = new sap.m.HBox({});
+                hBox.addItem(button);
+                hBox.addItem(chk1);
+                hBox.addItem(chk2);
+                hBox.addItem(chk3);
+                hBox.addItem(chk4);
+
+                var oBox = new sap.m.VBox({});
+                oBox.addItem(hBox);
+                oBox.addItem(map);
+                oBox.placeAt("content");
+            });
+
+        </script>
+    </head>
+
+    <body id="content" class="sapUiBody">
+    </body>
+
+</html>
